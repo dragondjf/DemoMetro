@@ -1,0 +1,194 @@
+/* Metro Style*/
+QPushButton {
+   background: green;
+}
+
+QPushButton:hover, QPushButton:pressed , QPushButton:checked, QPushButton:focus
+{
+    background-color: rgb(85, 170, 255);
+    text-align: center;
+    font-weight:100
+}
+
+QPushButton#MonitorButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.monitor.play.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#MonitorButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.monitor.play.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#MonitorButton:pressed, QPushButton#MonitorButton:checked
+{
+    background-image: url(skin/icons/light/appbar.monitor.play.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#AlarmButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.zune.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#AlarmButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.zune.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#AlarmButton:pressed, QPushButton#AlarmButton:checked
+{
+    background-image: url(skin/icons/light/appbar.zune.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#UserButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.people.multiple.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#UserButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.people.multiple.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+
+QPushButton#UserButton:pressed, QPushButton#UserButton:checked
+{
+    background-image: url(skin/icons/light/appbar.people.multiple.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#WaveformButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.graph.line.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#WaveformButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.graph.line.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#WaveformButton:pressed, QPushButton#WaveformButton:checked
+{
+    background-image: url(skin/icons/light/appbar.graph.line.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+
+
+QPushButton#SystemButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.cogs.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#SystemButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.cogs.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#SystemButton:pressed, QPushButton#SystemButton:checked
+{
+    background-image: url(skin/icons/light/appbar.cogs.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#HelpButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.book.help.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#HelpButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.book.help.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#HelpButton:pressed, QPushButton#HelpButton:checked
+{
+    background-image: url(skin/icons/light/appbar.book.help.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#AboutButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#AboutButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#AboutButton:pressed, QPushButton#AboutButton:checked
+{
+    background-image: url(skin/icons/light/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#ExitButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#ExitButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#ExitButton:pressed, QPushButton#ExitButton:checked
+{
+    background-image: url(skin/icons/light/appbar.at.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
+
+QPushButton#AddButton
+{
+    height: 400px;
+    background-image: url(skin/icons/dark/appbar.add.png);
+    background-repeat:no-repeat;
+    background-position: center top;
+}
+QPushButton#AddButton:hover
+{
+    background-image: url(skin/icons/dark/appbar.add.png);
+    background-repeat:no-repeat;
+    background-position: center right;
+}
+QPushButton#AddButton:pressed, QPushButton#AddButton:checked
+{
+    background-image: url(skin/icons/light/appbar.add.png);
+    background-repeat:no-repeat;
+    background-position: center left;
+}
