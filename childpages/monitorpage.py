@@ -3,7 +3,11 @@
 import os
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+import json
 from basepage import BasePage
+from config import windowsoptions
+
+monitoroption = windowsoptions['monitorpage']
 
 
 class MonitorPage(BasePage):
@@ -50,6 +54,7 @@ class MonitorPage(BasePage):
             "All Files (*);; Images (*.png *.bmp *.jpg)")
         if self.filename:
             self.setbg(self.filename)
+            windowsoptions['monitorpage']['backgroundimg'] = unicode(self.filename)
         else:
             return
 
@@ -65,4 +70,4 @@ class MonitorPage(BasePage):
         if hasattr(self, 'filename'):
             self.setbg(self.filename)
         else:
-            return
+            self.setbg(monitoroption['backgroundimg'])

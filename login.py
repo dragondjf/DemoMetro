@@ -3,25 +3,39 @@
 import os
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+import json
 from guiutil import set_skin
-import config
+from config import windowsoptions
+
+
+loginoptions = windowsoptions['login_window']
 
 
 class LoginDialog(QtGui.QDialog):
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
-        self.setWindowTitle(u'登录')
-        self.setWindowIcon(QtGui.QIcon(os.sep.join(['skin', 'images', 'config8.png'])))  # 设置程序图标
+
+        login_title = loginoptions['login_title']
+        windowicon = loginoptions['windowicon']
+        minsize = loginoptions['minsize']
+        size = loginoptions['size']
+        logo_title = loginoptions['logo_title']
+        logo_img_url = loginoptions['logo_img_url']
+
+        self.setWindowTitle(login_title)
+        self.setWindowIcon(QtGui.QIcon(windowicon))  # 设置程序图标
+        self.setMinimumSize(minsize[0], minsize[1])
+
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowMinimizeButtonHint)  # 无边框， 带系统菜单， 可以最小化
 
         self.login_logo = QtGui.QWidget()
         login_logo_mainlayout = QtGui.QGridLayout()
-        login_bg = QtGui.QLabel(config.logo_title)
+        login_bg = QtGui.QLabel(logo_title)
         login_bg.setObjectName('logo_bg')
         login_bg.setAlignment(QtCore.Qt.AlignCenter)
         login_logo_mainlayout.addWidget(login_bg)
         self.login_logo.setLayout(login_logo_mainlayout)
-        self.login_bg = config.logo_url
+        self.login_bg = logo_img_url
         setbg(self.login_logo, self.login_bg)
 
         login_np = QtGui.QWidget()
@@ -59,7 +73,7 @@ class LoginDialog(QtGui.QDialog):
         mainlayout.addWidget(login_lc)
         self.setLayout(mainlayout)
         set_skin(self, os.sep.join(['skin', 'qss', 'login.qss']))  # 设置主窗口样式
-        self.resize(400, 300)
+        self.resize(size[0], size[1])
 
     def login(self):
         if self.login_name.text() == 'admin' and self.login_password.text() == 'admin':

@@ -7,13 +7,15 @@ import logging
 from logging.handlers import RotatingFileHandler
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+import json
 
+from config import windowsoptions
 from login import login
 from effects import *
 from childpages import *
 from guiutil import set_skin, set_bg
+import utildialog
 
-import config
 
 #主日志保存在log/ifpms.log
 logging.root.setLevel(logging.INFO)
@@ -30,11 +32,14 @@ class MetroWindow(QtGui.QWidget):
 
     def __init__(self, parent=None):
         super(MetroWindow, self).__init__(parent)
+
+        self.page_tag = windowsoptions['mainwindow']['centralwindow']['page_tag']
+        self.page_tag_zh = windowsoptions['mainwindow']['centralwindow']['page_tag_zh']
         self.initUI()
 
     def initUI(self):
 
-        self.pagecount = len(config.tag_zh)
+        self.pagecount = len(self.page_tag_zh)
         self.createMetroButton()
 
         self.pages = QtGui.QStackedWidget()
@@ -57,19 +62,19 @@ class MetroWindow(QtGui.QWidget):
         buttonLayout = QtGui.QGridLayout()
         buttonLayout.setHorizontalSpacing(10)   # 设置和横向间隔像素
         buttonLayout.setVerticalSpacing(10)    # 设置纵向间隔像素
-        for buttons in config.tag:
+        for buttons in self.page_tag:
             for item in buttons:
                 button = item + 'Button'
-                setattr(self, button, QtGui.QPushButton(config.tag_zh[item]))
+                setattr(self, button, QtGui.QPushButton(self.page_tag_zh[item]))
                 getattr(self, button).setObjectName(button)
-                buttonLayout.addWidget(getattr(self, button), config.tag.index(buttons), buttons.index(item))
+                buttonLayout.addWidget(getattr(self, button), self.page_tag.index(buttons), buttons.index(item))
 
         self.buttonLayout = buttonLayout
 
         self.navigationPage.setLayout(buttonLayout)
 
     def createChildPages(self):
-        for buttons in config.tag:
+        for buttons in self.page_tag:
             for item in buttons:
                 page = item + 'Page'
                 childpage = 'child' + page
@@ -82,7 +87,7 @@ class MetroWindow(QtGui.QWidget):
                 self.pages.addWidget(getattr(self, childpage))
 
     def createConnections(self):
-        for buttons in config.tag:
+        for buttons in self.page_tag:
             for item in buttons:
                 button = item + 'Button'
                 getattr(self, button).clicked.connect(self.childpageChange)
@@ -130,21 +135,24 @@ class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
 
-        self.centeralwindow = MetroWindow(self)
-        self.setCentralWidget(self.centeralwindow)
+        title = windowsoptions['mainwindow']['title']
+        postion = windowsoptions['mainwindow']['postion']
+        minsize = windowsoptions['mainwindow']['minsize']
+        size = windowsoptions['mainwindow']['size']
+        windowicon = windowsoptions['mainwindow']['windowicon']
+        fullscreenflag = windowsoptions['mainwindow']['fullscreenflag']
+        statusbar_options = windowsoptions['mainwindow']['statusbar']
 
-        self.setWindowIcon(QtGui.QIcon(os.sep.join(['skin', 'images', 'config8.png'])))  # 设置程序图标
+        self.setWindowIcon(QtGui.QIcon(windowicon))  # 设置程序图标
         width = QtGui.QDesktopWidget().availableGeometry().width() * 4 / 5
         height = QtGui.QDesktopWidget().availableGeometry().height() * 7 / 8
-        self.setGeometry(300, 300, width, height)  # 初始化窗口位置和大小
+        self.setGeometry(postion[0], postion[1], width, height)  # 初始化窗口位置和大小
         self.center()  # 将窗口固定在屏幕中间
-        self.setMinimumSize(800, 600)
-        self.setWindowTitle('Math Plot')
+        self.setMinimumSize(minsize[0], minsize[1])
+        self.setWindowTitle(title)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
-        self.setskin()
-
-        self.fullscreenflag = False  # 初始化时非窗口最大话标志
+        self.fullscreenflag = fullscreenflag  # 初始化时非窗口最大话标志
         self.navigation_flag = True   # 导航标志，初始化时显示导航
         self.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -153,16 +161,25 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowMinimizeButtonHint)  # 无边框， 带系统菜单， 可以最小化
         # self.setMouseTracking(True)
 
+        self.centeralwindow = MetroWindow(self)
+        self.setCentralWidget(self.centeralwindow)
+
         self.statusbar = QtGui.QStatusBar()
         self.setStatusBar(self.statusbar)
-        self.statusbar.showMessage(u'Ready')
-        self.statusbar.setMinimumHeight(30)
-        self.statusbar.hide()
+        self.statusbar.showMessage(statusbar_options['initmessage'])
+        self.statusbar.setMinimumHeight(statusbar_options['minimumHeight'])
+        self.statusbar.setVisible(statusbar_options['visual'])
+
+        self.setskin()
+        if self.fullscreenflag:
+            self.showFullScreen()
+        else:
+            self.showNormal()
 
     def setskin(self):
         set_skin(self.centeralwindow, os.sep.join(['skin', 'qss', 'MetroNavigationPage.qss']))  # 设置导航页面样式
 
-        for buttons in config.tag:
+        for buttons in windowsoptions['mainwindow']['centralwindow']['page_tag']:
             for item in buttons:
                 childpage = getattr(self.centeralwindow, 'child' + item + 'Page')
                 set_skin(childpage, os.sep.join(['skin', 'qss', 'MetroNavigationBar.qss']))   # 设置导航工具条的样式
@@ -182,13 +199,25 @@ class MainWindow(QtGui.QMainWindow):
         else:
             self.showFullScreen()
 
+    def closeEvent(self, evt):
+        exitflag = utildialog.exit()
+        for item in exitflag:
+            if item == 'minRadio' and exitflag[item]:
+                self.showMinimized()
+                evt.ignore()
+            elif item == 'exitRadio' and exitflag[item]:
+                evt.accept()
+            elif item == 'exitsaveRadio' and exitflag[item]:
+                evt.accept()
+                options = windowsoptions
+                options['mainwindow']['fullscreenflag'] = self.isFullScreen()
+                with open('windowsoptions.json', 'wb') as f:
+                    # f.write(json.dumps(options, indent=1))
+                    json.dump(options, f, indent=1)
+
     def keyPressEvent(self, evt):
         if evt.key() == QtCore.Qt.Key_Escape:
-            reply = QtGui.QMessageBox.question(self, 'Message', "Are you sure to quit?", QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.No)
-            if reply == QtGui.QMessageBox.Yes:
-                self.close()
-            else:
-                return
+            self.close()
         elif evt.key() == QtCore.Qt.Key_F11:
             if not self.fullscreenflag:
                 self.showFullScreen()
@@ -213,7 +242,7 @@ class MainWindow(QtGui.QMainWindow):
 def main():
     app = QtGui.QApplication(sys.argv)
     if login():
-        splash = QtGui.QSplashScreen(QtGui.QPixmap(os.sep.join(['skin', 'images', 'splash.png'])))
+        splash = QtGui.QSplashScreen(QtGui.QPixmap(windowsoptions['splashimg']))
         splash.show()
         app.processEvents()
         main = MainWindow()
