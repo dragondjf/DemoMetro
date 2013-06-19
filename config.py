@@ -10,11 +10,11 @@ except Exception, e:
     windowsoptions = {
         'login_window': {
                 'login_title': u'登陆',
-                'windowicon': os.sep.join(['skin', 'images', 'config8.png']),
+                'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
                 'minsize': (400, 300),
                 'size': (400, 300),
                 'logo_title': u'Metro Style Mangager System',
-                'logo_img_url': os.sep.join(['skin', 'images', 'config8.png'])
+                'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
             },
         'mainwindow': {
                 'title': u'DemoMetro',
@@ -45,14 +45,23 @@ except Exception, e:
             },
         'exitdialog': {
             'exit_title': u'登陆',
-            'windowicon': os.sep.join(['skin', 'images', 'config8.png']),
+            'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
             'minsize': (400, 300),
             'size': (400, 300),
             'logo_title': u'Metro Style Mangager System',
-            'logo_img_url': os.sep.join(['skin', 'images', 'config8.png'])
+            'logo_img_url': os.sep.join([os.getcwd(),'skin', 'images', 'config8.png'])
         },
-        'splashimg': os.sep.join(['skin', 'images', 'splash.png']),
+        'adddcdialog': {
+            'adddc_title': u'增加采集器',
+            'windowicon': os.sep.join([os.getcwd(),'skin', 'images', 'config8.png']),
+            'minsize': (400, 300),
+            'size': (400, 300),
+            'logo_title': u'Metro Style Mangager System',
+            'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
+        },
+        'splashimg': os.sep.join([os.getcwd(), 'skin', 'images', 'splash.png']),
         'monitorpage': {
-            'backgroundimg': os.sep.join(['skin', 'images', 'bg.JPEG'])
-        }
+            'backgroundimg': os.sep.join([os.getcwd(), 'skin', 'images', 'bg.JPEG'])
+        },
+        'paLabels': {}
     }

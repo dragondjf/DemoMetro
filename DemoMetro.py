@@ -211,6 +211,7 @@ class MainWindow(QtGui.QMainWindow):
                 evt.accept()
                 options = windowsoptions
                 options['mainwindow']['fullscreenflag'] = self.isFullScreen()
+                options['paLabels'] = getattr(self.centeralwindow, 'MonitorPage').paLabels
                 with open('windowsoptions.json', 'wb') as f:
                     # f.write(json.dumps(options, indent=1))
                     json.dump(options, f, indent=1)

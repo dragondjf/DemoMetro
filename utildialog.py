@@ -75,10 +75,10 @@ class ExitDialog(QtGui.QDialog):
         self.setLayout(mainlayout)
         set_skin(self, os.sep.join(['skin', 'qss', 'login.qss']))  # 设置主窗口样式
         self.resize(size[0], size[1])
+        self.exitflag = {}
 
     def exit(self):
         self.accept()  # 关闭对话框并返回1
-        self.exitflag = {}
         for radio in ['minRadio', 'exitRadio', 'exitsaveRadio']:
             if getattr(self, radio) is self.exitradiogroup.checkedButton():
                 self.exitflag.update({radio: True})
