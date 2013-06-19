@@ -9,6 +9,68 @@ from config import windowsoptions
 
 
 exitoptions = windowsoptions['exitdialog']
+msgoptions = windowsoptions['msgdialog']
+
+
+class MessageDialog(QtGui.QDialog):
+    def __init__(self, text, parent=None):
+        QtGui.QDialog.__init__(self, parent)
+
+        msg_title = msgoptions['msg_title']
+        windowicon = msgoptions['windowicon']
+        minsize = msgoptions['minsize']
+        size = msgoptions['size']
+        logo_title = msgoptions['logo_title']
+        logo_img_url = msgoptions['logo_img_url']
+
+        self.setWindowTitle(msg_title)
+        self.setWindowIcon(QtGui.QIcon(windowicon))  # 设置程序图标
+        self.setMinimumSize(minsize[0], minsize[1])
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowSystemMenuHint | QtCore.Qt.WindowMinimizeButtonHint)  # 无边框， 带系统菜单， 可以最小化
+
+        # logo显示
+        self.login_logo = QtGui.QWidget()
+        login_logo_mainlayout = QtGui.QGridLayout()
+        login_bg = QtGui.QLabel(logo_title)
+        login_bg.setObjectName('logo_bg')
+        login_bg.setAlignment(QtCore.Qt.AlignCenter)
+        login_logo_mainlayout.addWidget(login_bg)
+        self.login_logo.setLayout(login_logo_mainlayout)
+        self.login_bg = logo_img_url
+        setbg(self.login_logo, self.login_bg)
+
+        # message内容提示
+        self.msglabel = QtGui.QLabel(text)
+
+        # 退出按钮布局
+        self.login_lc = QtGui.QWidget()
+        self.pbEnter = QtGui.QPushButton(u'确定', self)
+        self.pbCancel = QtGui.QPushButton(u'取消', self)
+        self.pbEnter.clicked.connect(self.enter)
+        self.pbCancel.clicked.connect(self.reject)
+
+        self.login_lc__mainlayout = QtGui.QGridLayout()
+        self.login_lc__mainlayout.addWidget(self.pbEnter, 0, 0)
+        self.login_lc__mainlayout.addWidget(self.pbCancel, 0, 1)
+        self.login_lc.setLayout(self.login_lc__mainlayout)
+
+        mainlayout = QtGui.QVBoxLayout()
+        mainlayout.addWidget(self.login_logo)
+        mainlayout.addWidget(self.msglabel)
+        mainlayout.addWidget(self.login_lc)
+        self.setLayout(mainlayout)
+        set_skin(self, os.sep.join(['skin', 'qss', 'login.qss']))  # 设置主窗口样式
+        self.resize(size[0], size[1])
+        self.msgflag = {}
+
+    def enter(self):
+        self.accept()  # 关闭对话框并返回1
+
+    def resizeEvent(self, event):
+        if hasattr(self, 'login_bg'):
+            setbg(self.login_logo, self.login_bg)
+        else:
+            return
 
 
 class ExitDialog(QtGui.QDialog):
@@ -108,3 +170,12 @@ def exit():
         return dialog.exitflag
     else:
         return dialog.exitflag
+
+
+def msg(text):
+    """返回True或False"""
+    dialog = MessageDialog(text)
+    if dialog.exec_():
+        return True
+    else:
+        return False

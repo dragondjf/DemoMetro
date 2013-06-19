@@ -104,3 +104,13 @@ QTableWidget {
     background: lightgray;
     selection-background-color: gray;
 }
+
+/*QLabel#palabel{*/
+    /*background: lightgray;*/
+    /*border: 2px solid green;*/
+    /*border-radius: 20px;*/
+    /*padding: 2px;*/
+    /*height: 40px;*/
+    /*text-align: center;*/
+    /*background-image: url(skin/images/config8.png);*/
+/*}*/

@@ -1,10 +1,12 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 import os
+import json
 from PyQt4 import QtGui
 from PyQt4 import QtCore
-import json
+
 from basepage import BasePage
+from utildialog import msg
 from config import windowsoptions
 from guiutil import set_bg, set_skin
 
@@ -21,12 +23,11 @@ class MonitorPage(BasePage):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.createContextMenu()
         self.ips = []
-        self.paLabels = windowsoptions['paLabels']
-        self.pas = []
-        if self.paLabels:
-            self.loadPA()
-        else:
-            self.clearPA()
+        self.palabels = {}
+        # if self.paLabels:
+        #     self.loadPA()
+        # else:
+        #     self.clearPA()
 
     def createContextMenu(self):
         '''
@@ -47,11 +48,13 @@ class MonitorPage(BasePage):
 
         self.action_pointnum = self.contextMenu.addAction(u'载入监控地图(Load image)')
         self.action_addPA = self.contextMenu.addAction(u'增加防区(Add PA)')
+        self.action_loadPA = self.contextMenu.addAction(u'加载防区(Load PA)')
         self.action_clearPA = self.contextMenu.addAction(u'清除防区(Clear PA)')
 
         self.action_pointnum.triggered.connect(self.set_monitormap)
-        self.action_addPA.triggered.connect(self.addPA)
-        self.action_clearPA.triggered.connect(self.clearPA)
+        self.action_addPA.triggered.connect(self.addPAs)
+        self.action_loadPA.triggered.connect(self.loadPAs)
+        self.action_clearPA.triggered.connect(self.clearPAs)
 
     def showContextMenu(self, pos):
         '''
@@ -73,7 +76,8 @@ class MonitorPage(BasePage):
         else:
             return
 
-    def addPA(self):
+    def addPAs(self):
+        self.clearPAs()
         flag, beginip, endip, dc_panum = adddc()
         if flag:
             if beginip and endip == '':
@@ -86,47 +90,60 @@ class MonitorPage(BasePage):
                     ip = baseip + '.' + str(i)
                     if ip not in self.ips:
                         self.ips.append(ip)
-        self.createPALabels(self.ips, dc_panum)
+        self.createpalabels(self.ips, dc_panum)
 
-    def loadPA(self):
-        for ip in self.paLabels:
-            pas = self.paLabels[ip]
-            for ch in pas:
-                pos =  pas[ch]
-                pa = DragLabel(str(pos), ip, ch, self)
-                pa.move(pos[0], pos[1])
-                pa.show()
-                self.pas.append(pa)
+    def loadPAs(self):
+        try:
+            import os
+            with open(os.sep.join([os.getcwd(), 'options', 'painfos.json']), 'r') as f:
+                self.painfos = json.load(f)
+        except Exception, e:
+            self.painfos = {}
+        self.clearPAs()
+        for gno, pa in self.painfos.items():
+            palabel = PALabel(pa['ip'], pa['pid'], pa['did'], pa['rid'], pa['name'], self)
+            palabel.move(pa['x'], pa['y'])
+            palabel.show()
+            self.palabels.update({gno: palabel})
         self.action_addPA.setEnabled(False)
+        self.action_loadPA.setEnabled(False)
         self.action_clearPA.setEnabled(True)
 
-    def createPALabels(self, ips=[], dc_panum=2):
-        self.clearPA()
+    def createpalabels(self, ips, dc_panum):
         width = self.width()
         height = self.height()
         postions = poscalulator(width, height, 8, 16)
-        i = 0
-        for ip in ips:
-            pa_dc = {}
-            for ch in range(dc_panum):
-                pa = DragLabel(str(postions[i]), ip, ch, self)
-                pa.move(postions[i][0], postions[i][1])
-                pa.show()
-                pa_dc.update({ch: (pa.pos().x(), pa.pos().y())})
-                i = i + 1
-                self.pas.append(pa)
-            self.paLabels.update({ip: pa_dc})
-        windowsoptions['paLabels'] = self.paLabels
-        self.action_addPA.setEnabled(False)
-        self.action_clearPA.setEnabled(True)
+        if len(ips) * dc_panum <= windowsoptions['maxpanum']:
+            i = 0
+            rid = 0
+            for ip in ips:
+                did = ips.index(ip) + 1
+                for pid in range(int(dc_panum)):
+                    pid = pid + 1
+                    gno = '%d-%d-%d' % (rid, did, pid)
+                    palabel = PALabel(ip, pid, did, rid, 'PA-%s' % gno, self)
+                    palabel.move(postions[i][0], postions[i][1])
+                    palabel.x = postions[i][0]
+                    palabel.y = postions[i][1]
+                    palabel.show()
+                    self.palabels.update({gno: palabel})
+                    i = i + 1
+            self.action_addPA.setEnabled(False)
+            self.action_loadPA.setEnabled(False)
+            self.action_clearPA.setEnabled(True)
+        else:
+            flag = msg(u'支持的数量上限为128,请输入正确的ip地址范围')
+            if flag:
+                self.addPAs()
 
-    def clearPA(self):
-        if self.pas:
-            for item in self.pas:
-                item.deleteLater()
-        self.pas = []
-        self.paLabels = {}
+    def clearPAs(self):
+        if self.palabels:
+            for gno, palabel in self.palabels.items():
+                palabel.deleteLater()
+        self.ips = []
+        self.palabels = {}
         self.action_addPA.setEnabled(True)
+        self.action_loadPA.setEnabled(True)
         self.action_clearPA.setEnabled(False)
 
     def setbg(self, filename):
@@ -166,16 +183,21 @@ class MonitorPage(BasePage):
                 hotSpot.setY(hotSpotPos[1].toInt()[0])
 
             ip = event.source().ip
-            ch = event.source().ch
+            pid = event.source().pid
+            did = event.source().did
+            rid = event.source().rid
+            name = event.source().name
+            gno = '%d-%d-%d' % (rid, did, pid)
 
-            newLabel = DragLabel(pieces, ip, ch, self)
+            newLabel = PALabel(ip, pid, did, rid, name, self)
             newLabel.move(position - hotSpot)
             newLabel.show()
 
             position += QtCore.QPoint(newLabel.width(), 0)
 
-            self.paLabels[ip][ch] = (newLabel.pos().x(), newLabel.pos().y())
-            self.pas.append(newLabel)
+            newLabel.x = newLabel.pos().x()
+            newLabel.y = newLabel.pos().y()
+            self.palabels.update({gno: newLabel})
 
             if event.source() in self.children():
                 event.setDropAction(QtCore.Qt.MoveAction)
@@ -188,46 +210,121 @@ class MonitorPage(BasePage):
 
 def poscalulator(width, height, row, col):
     postions = []
-    for i in range(row):
-        x = (i + 1) * width / col
-        for j in range(col):
-            y = (j + 1) * height / row
+    for i in range(col):
+        x = (i + 1) * width / (col + 1)
+        for j in range(row):
+            y = (j + 1) * height / (row + 1)
             postions.append((x, y))
     return postions
 
 
-class DragLabel(QtGui.QLabel):
-    def __init__(self, text, ip, ch, parent):
-        super(DragLabel, self).__init__(text, parent)
+class PALabel(QtGui.QLabel):
+    def __init__(self, ip, pid, did, rid, name, parent):
+        super(PALabel, self).__init__(parent)
         self.ip = ip
-        self.ch = ch
+        self.rid = rid
+        self.did = did
+        self.pid = pid
+        self.gno = '%d-%d-%d' % (rid, did, pid)
+        self.name = u"PA-%s" % self.gno
+        self.desc = u""
+        self.enable = True
+        self.audio_enable = False
+        self.x = 0
+        self.y = 0
+        self.status = 1
+        self.latest_change_time = 0
+        self.alg = {}
+        self.setText(self.name)
         set_bg(self)
         self.setAutoFillBackground(True)
         self.setFrameShape(QtGui.QFrame.Panel)
         self.setFrameShadow(QtGui.QFrame.Raised)
+        self.setObjectName('palabel')
+        self.setAlignment(QtCore.Qt.AlignCenter)
+        self.resize(self.width(), 40)
+
+        self.createContextMenu()
+        self.setMouseTracking(True)
+
+    def createContextMenu(self):
+        '''
+        创建右键菜单
+        '''
+        # 必须将ContextMenuPolicy设置为Qt.CustomContextMenu
+        # 否则无法使用customContextMenuRequested信号
+        # self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        # self.customContextMenuRequested.connect(self.showContextMenu)
+
+        # 创建QMenu
+        self.contextMenu = QtGui.QMenu()
+        style_QMenu1 = "QMenu {background-color: #ABABAB; border: 1px solid black;}"
+        style_QMenu2 = "QMenu::item {background-color: transparent;}"
+        style_QMenu3 = "QMenu::item:selected { /* when user selects item using mouse or keyboard */background-color: #654321;}"
+        style_QMenu = QtCore.QString(style_QMenu1 + style_QMenu2 + style_QMenu3)
+        self.contextMenu.setStyleSheet(style_QMenu)
+
+        self.action_disable = self.contextMenu.addAction(u'禁用(Disabled)')
+        self.action_checkwave = self.contextMenu.addAction(u'查看波形(Check Wave)')
+        self.action_checkproperty = self.contextMenu.addAction(u'属性(Property)')
+
+        self.action_disable.triggered.connect(self.set_disable)
+        self.action_checkwave.triggered.connect(self.checkwave)
+        self.action_checkproperty.triggered.connect(self.checkproperty)
+
+    def set_disable(self):
+        if unicode(self.action_disable.text()) == u'禁用(Disabled)':
+            self.action_disable.setText(u'启用(enabled)')
+            set_bg(self, QtGui.QColor('#ABABAB'))
+        else:
+            self.action_disable.setText(u'禁用(Disabled)')
+            set_bg(self, QtGui.QColor('green'))
+        self.update()
+
+    def checkwave(self):
+        pass
+
+    def checkproperty(self):
+        pass
+
+    def showContextMenu(self):
+        '''
+        右键点击时调用的函数
+        '''
+        # 菜单显示前，将它移动到鼠标点击的位置
+        coursePoint = QtGui.QCursor.pos()  # 获取当前光标的位置
+        self.contextMenu.move(coursePoint)
+        self.contextMenu.show()
 
     def mousePressEvent(self, event):
-        hotSpot = event.pos()
+        if event.button() == QtCore.Qt.LeftButton:
+            hotSpot = event.pos()
 
-        mimeData = QtCore.QMimeData()
-        mimeData.setText(self.text())
-        mimeData.setData('application/x-hotspot',
-                '%d %d' % (hotSpot.x(), hotSpot.y()))
+            mimeData = QtCore.QMimeData()
+            mimeData.setText(self.text())
+            mimeData.setData('application/x-hotspot',
+                    '%d %d' % (hotSpot.x(), hotSpot.y()))
 
-        pixmap = QtGui.QPixmap(self.size())
-        self.render(pixmap)
+            pixmap = QtGui.QPixmap(self.size())
+            self.render(pixmap)
 
-        drag = QtGui.QDrag(self)
-        drag.setMimeData(mimeData)
-        drag.setPixmap(pixmap)
-        drag.setHotSpot(hotSpot)
+            drag = QtGui.QDrag(self)
+            drag.setMimeData(mimeData)
+            drag.setPixmap(pixmap)
+            drag.setHotSpot(hotSpot)
 
-        dropAction = drag.exec_(QtCore.Qt.CopyAction | QtCore.Qt.MoveAction, QtCore.Qt.CopyAction)
+            dropAction = drag.exec_(QtCore.Qt.CopyAction | QtCore.Qt.MoveAction, QtCore.Qt.CopyAction)
 
-        if dropAction == QtCore.Qt.MoveAction:
-            self.close()
-            self.update()
+            if dropAction == QtCore.Qt.MoveAction:
+                self.close()
+                self.update()
 
+        if event.button() == QtCore.Qt.RightButton:
+            self.showContextMenu()
+
+    def mouseMoveEvent(self, event):
+        if event.pos() in self.rect():
+            self.setToolTip(self.gno)
 
 class AddDcDialog(QtGui.QDialog):
     def __init__(self, parent=None):

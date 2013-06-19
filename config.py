@@ -22,7 +22,7 @@ except Exception, e:
                 'minsize': (800, 600),
                 'size': (800, 600),
                 'windowicon': os.sep.join(['skin', 'images', 'config8.png']),
-                'fullscreenflag': False,
+                'fullscreenflag': True,
                 'centralwindow': {
                     'page_tag': [['Monitor', 'Alarm', 'User'], ['Waveform', 'System', 'Help'], ['About', 'Exit', 'Add']],
                     'page_tag_zh': {
@@ -49,11 +49,19 @@ except Exception, e:
             'minsize': (400, 300),
             'size': (400, 300),
             'logo_title': u'Metro Style Mangager System',
-            'logo_img_url': os.sep.join([os.getcwd(),'skin', 'images', 'config8.png'])
+            'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
         },
         'adddcdialog': {
             'adddc_title': u'增加采集器',
-            'windowicon': os.sep.join([os.getcwd(),'skin', 'images', 'config8.png']),
+            'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
+            'minsize': (400, 300),
+            'size': (400, 300),
+            'logo_title': u'Metro Style Mangager System',
+            'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
+        },
+        'msgdialog': {
+            'msg_title': u'增加采集器',
+            'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
             'minsize': (400, 300),
             'size': (400, 300),
             'logo_title': u'Metro Style Mangager System',
@@ -61,7 +69,7 @@ except Exception, e:
         },
         'splashimg': os.sep.join([os.getcwd(), 'skin', 'images', 'splash.png']),
         'monitorpage': {
-            'backgroundimg': os.sep.join([os.getcwd(), 'skin', 'images', 'bg.JPEG'])
+            'backgroundimg': os.sep.join([os.getcwd(), 'skin', 'images', 'bg.jpg'])
         },
-        'paLabels': {}
+        'maxpanum': 128
     }

@@ -211,10 +211,24 @@ class MainWindow(QtGui.QMainWindow):
                 evt.accept()
                 options = windowsoptions
                 options['mainwindow']['fullscreenflag'] = self.isFullScreen()
-                options['paLabels'] = getattr(self.centeralwindow, 'MonitorPage').paLabels
-                with open('windowsoptions.json', 'wb') as f:
+                painfos = {}
+                for gno, palabel in getattr(self.centeralwindow, 'MonitorPage').palabels.items():
+                    pa = {
+                        'ip': palabel.ip,
+                        'pid': palabel.pid,
+                        'did': palabel.did,
+                        'rid': palabel.rid,
+                        'name': palabel.name,
+                        'x': palabel.x,
+                        'y': palabel.y,
+                    }
+                    painfos.update({gno: pa})
+                with open(os.sep.join([os.getcwd(), 'options', 'windowsoptions.json']), 'wb') as f:
                     # f.write(json.dumps(options, indent=1))
                     json.dump(options, f, indent=1)
+                with open(os.sep.join([os.getcwd(), 'options', 'painfos.json']), 'wb') as f:
+                    # f.write(json.dumps(painfos, indent=1))
+                    json.dump(painfos, f, indent=1)
 
     def keyPressEvent(self, evt):
         if evt.key() == QtCore.Qt.Key_Escape:
