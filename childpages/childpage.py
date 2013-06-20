@@ -10,6 +10,7 @@ class ChildPage(QtGui.QWidget):
         super(ChildPage, self).__init__(parent)
         self.parent = parent
         self.child = child
+
         self.createNavigation()
 
         mainLayout = QtGui.QVBoxLayout()
@@ -17,6 +18,8 @@ class ChildPage(QtGui.QWidget):
         mainLayout.addWidget(self.child)
         self.setLayout(mainLayout)
         self.layout().setContentsMargins(0, 0, 0, 0)
+
+        self.navigation.hide()
 
     def createNavigation(self):
         navbutton = ['Navigation', 'Back', 'Forward', 'Min', 'Max', 'Close']

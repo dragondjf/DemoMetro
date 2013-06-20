@@ -9,6 +9,7 @@ from basepage import BasePage
 from utildialog import msg
 from config import windowsoptions
 from guiutil import set_bg, set_skin
+from app import StatusListenThreadHandler
 
 monitoroption = windowsoptions['monitorpage']
 adddcoptions = windowsoptions['adddcdialog']
@@ -24,10 +25,6 @@ class MonitorPage(BasePage):
         self.createContextMenu()
         self.ips = []
         self.palabels = {}
-        # if self.paLabels:
-        #     self.loadPA()
-        # else:
-        #     self.clearPA()
 
     def createContextMenu(self):
         '''
@@ -50,11 +47,13 @@ class MonitorPage(BasePage):
         self.action_addPA = self.contextMenu.addAction(u'增加防区(Add PA)')
         self.action_loadPA = self.contextMenu.addAction(u'加载防区(Load PA)')
         self.action_clearPA = self.contextMenu.addAction(u'清除防区(Clear PA)')
+        self.action_listenWebService = self.contextMenu.addAction(u'监听(Listen WebService)')
 
         self.action_pointnum.triggered.connect(self.set_monitormap)
         self.action_addPA.triggered.connect(self.addPAs)
         self.action_loadPA.triggered.connect(self.loadPAs)
         self.action_clearPA.triggered.connect(self.clearPAs)
+        self.action_listenWebService.triggered.connect(self.listenwebservice)
 
     def showContextMenu(self, pos):
         '''
@@ -101,8 +100,7 @@ class MonitorPage(BasePage):
             self.painfos = {}
         self.clearPAs()
         for gno, pa in self.painfos.items():
-            palabel = PALabel(pa['ip'], pa['pid'], pa['did'], pa['rid'], pa['name'], self)
-            palabel.move(pa['x'], pa['y'])
+            palabel = PALabel(pa['ip'], pa['pid'], pa['did'], pa['rid'], pa['name'],pa['x'], pa['y'], self)
             palabel.show()
             self.palabels.update({gno: palabel})
         self.action_addPA.setEnabled(False)
@@ -121,10 +119,9 @@ class MonitorPage(BasePage):
                 for pid in range(int(dc_panum)):
                     pid = pid + 1
                     gno = '%d-%d-%d' % (rid, did, pid)
-                    palabel = PALabel(ip, pid, did, rid, 'PA-%s' % gno, self)
-                    palabel.move(postions[i][0], postions[i][1])
-                    palabel.x = postions[i][0]
-                    palabel.y = postions[i][1]
+                    x = postions[i][0]
+                    y = postions[i][1]
+                    palabel = PALabel(ip, pid, did, rid, 'PA-%s' % gno, x, y, self)
                     palabel.show()
                     self.palabels.update({gno: palabel})
                     i = i + 1
@@ -145,6 +142,24 @@ class MonitorPage(BasePage):
         self.action_addPA.setEnabled(True)
         self.action_loadPA.setEnabled(True)
         self.action_clearPA.setEnabled(False)
+
+    def listenwebservice(self):
+        self.statushandler = StatusListenThreadHandler()
+        self.statushandler.statuschanged.connect(self.changestatus)
+        self.statushandler.start()
+
+    @QtCore.pyqtSlot(dict)
+    def changestatus(self, painfo):
+        rid = 0
+        did = painfo['did']
+        pid = painfo['pid']
+        rid = painfo['rid']
+        status = painfo['status']
+        change_time = painfo['change_time']
+        gno = '%d-%d-%d' % (rid, did, pid)
+        self.palabels[gno].status = status
+        self.palabels[gno].change_time = change_time
+        self.palabels[gno].update()
 
     def setbg(self, filename):
         self.setAutoFillBackground(True)
@@ -188,15 +203,18 @@ class MonitorPage(BasePage):
             rid = event.source().rid
             name = event.source().name
             gno = '%d-%d-%d' % (rid, did, pid)
-
-            newLabel = PALabel(ip, pid, did, rid, name, self)
-            newLabel.move(position - hotSpot)
+            pos = position - hotSpot
+            x = pos.x()
+            y = pos.y()
+            newLabel = PALabel(ip, pid, did, rid, name, x, y, self)
+            # newLabel.move(position - hotSpot)
             newLabel.show()
 
             position += QtCore.QPoint(newLabel.width(), 0)
 
             newLabel.x = newLabel.pos().x()
             newLabel.y = newLabel.pos().y()
+            newLabel.status = event.source().status
             self.palabels.update({gno: newLabel})
 
             if event.source() in self.children():
@@ -211,15 +229,40 @@ class MonitorPage(BasePage):
 def poscalulator(width, height, row, col):
     postions = []
     for i in range(col):
-        x = (i + 1) * width / (col + 1)
+        x = (i + 1) * width / (col + 2)
         for j in range(row):
-            y = (j + 1) * height / (row + 1)
+            y = (j + 1) * height / (row + 2)
             postions.append((x, y))
     return postions
 
 
 class PALabel(QtGui.QLabel):
-    def __init__(self, ip, pid, did, rid, name, parent):
+
+    status_name = ['Disabled', 'Disconn', 'Connect', 'MinorWarning', 'Warning', 'Blast', 'Fiberbroken', 'Unnormal']
+    ALARM_DELAY_SECS = 5  # 告警状态延迟秒数
+    ALARM_REPREAT_INTERVAL_SECS = 2  # 告警持续期间播放声音重复间隔
+
+    statuscolor = {
+        'Disabled': '#ABABAB',
+        'Disconn': '#ABABAB',
+        'Connect' : 'green',
+        'Blast': 'red',
+        'Warning': 'red',
+        'MinorWarning': 'yellow',
+        'Fiberbroken': 'yellow',
+        'Unnormal': '#ABABAB'
+    }
+    status_name_zh = {
+        'Disabled': u'禁用',
+        'Disconn': u'断开',
+        'Connect' : u'运行',
+        'Blast': u'爆破',
+        'Warning': u'告警',
+        'MinorWarning': u'预警',
+        'Fiberbroken': u'断纤',
+        'Unnormal': u'故障'
+    }
+    def __init__(self, ip, pid, did, rid, name, x, y, parent):
         super(PALabel, self).__init__(parent)
         self.ip = ip
         self.rid = rid
@@ -227,13 +270,14 @@ class PALabel(QtGui.QLabel):
         self.pid = pid
         self.gno = '%d-%d-%d' % (rid, did, pid)
         self.name = u"PA-%s" % self.gno
-        self.desc = u""
+        self.desc = self.name
         self.enable = True
         self.audio_enable = False
-        self.x = 0
-        self.y = 0
+        self.x = x
+        self.y = y
         self.status = 1
-        self.latest_change_time = 0
+        self.change_time = u'1970-08-08: 08:08:08'
+        self.latest_change_time = u'1970-08-08: 08:08:08'
         self.alg = {}
         self.setText(self.name)
         set_bg(self)
@@ -242,10 +286,11 @@ class PALabel(QtGui.QLabel):
         self.setFrameShadow(QtGui.QFrame.Raised)
         self.setObjectName('palabel')
         self.setAlignment(QtCore.Qt.AlignCenter)
-        self.resize(self.width(), 40)
+        self.resize(30, 30)
 
         self.createContextMenu()
         self.setMouseTracking(True)
+        self.move(self.x, self.y)
 
     def createContextMenu(self):
         '''
@@ -267,25 +312,54 @@ class PALabel(QtGui.QLabel):
         self.action_disable = self.contextMenu.addAction(u'禁用(Disabled)')
         self.action_checkwave = self.contextMenu.addAction(u'查看波形(Check Wave)')
         self.action_checkproperty = self.contextMenu.addAction(u'属性(Property)')
+        self.action_changestatus = self.contextMenu.addAction(u'改变状态(Change Status)')
 
         self.action_disable.triggered.connect(self.set_disable)
         self.action_checkwave.triggered.connect(self.checkwave)
         self.action_checkproperty.triggered.connect(self.checkproperty)
+        # self.action_changestatus.triggered.connect(self.changestatus)
+
+        # self.timer = QtCore.QTimer(self)
+        # self.connect(self.timer, QtCore.SIGNAL("timeout()"), self.changestatus)
+        # self.timer.start(200)
 
     def set_disable(self):
         if unicode(self.action_disable.text()) == u'禁用(Disabled)':
             self.action_disable.setText(u'启用(enabled)')
-            set_bg(self, QtGui.QColor('#ABABAB'))
+            self.status = 0
         else:
             self.action_disable.setText(u'禁用(Disabled)')
-            set_bg(self, QtGui.QColor('green'))
+            self.status = 2
         self.update()
 
     def checkwave(self):
         pass
 
     def checkproperty(self):
-        pass
+        self.propertymessage = u'<table> \
+                            <tr align="left"><td>防区ip: </td><td>%s</td></tr> \
+                            <tr align="left"><td>防区名字:</td><td>%s</td></tr> \
+                            <tr align="left"><td>防区状态:</td><td> %s</td></tr> \
+                            <tr align="left"><td>防区告警时间:</td><td> %s</td></tr> \
+                            <tr align="left"><td>防区上一次状态改变的时间:</td><td> %s</td></tr> \
+                            <tr align="left"><td>防区的区域编号:</td><td> %d</td></tr> \
+                            <tr align="left"><td>防区的采集器编号:</td><td> %d</td></tr> \
+                            <tr align="left"><td>防区的通道编号:</td><td> %d</td></tr> \
+                            <tr align="left"><td>防区描述信息:</td><td> %s</td></tr> \
+                            <tr align="left"><td>防区位置:</td><td>( %d, %d)</td></tr></table>' % (
+                            self.ip,
+                            self.name, 
+                            self.status_name_zh[self.status_name[self.status]],
+                            self.change_time,
+                            self.latest_change_time,
+                            self.rid,
+                            self.did,
+                            self.pid,
+                            self.desc,
+                            self.x,
+                            self.y
+                            )
+        msg(self.propertymessage)
 
     def showContextMenu(self):
         '''
@@ -295,6 +369,15 @@ class PALabel(QtGui.QLabel):
         coursePoint = QtGui.QCursor.pos()  # 获取当前光标的位置
         self.contextMenu.move(coursePoint)
         self.contextMenu.show()
+
+    # def changestatus(self):
+    #     import random
+    #     self.status = random.randrange(0, 7)
+    #     self.update()
+
+    def paintEvent(self, event):
+        set_bg(self, QtGui.QColor(self.statuscolor[self.status_name[self.status]]))
+        self.setText(self.name)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -324,7 +407,18 @@ class PALabel(QtGui.QLabel):
 
     def mouseMoveEvent(self, event):
         if event.pos() in self.rect():
-            self.setToolTip(self.gno)
+            self.tipmessage = u'<table> \
+                            <tr align="left"><td>防区ip: </td><td>%s</td></tr> \
+                            <tr align="left"><td>防区名字:</td><td>%s</td></tr> \
+                            <tr align="left"><td>防区状态:</td><td> %s</td></tr> \
+                            <tr align="left"><td>防区告警时间:</td><td> %s</td></tr></table>' % (
+                            self.ip,
+                            self.name,
+                            self.status_name_zh[self.status_name[self.status]],
+                            self.change_time
+                            )
+            self.setToolTip(self.tipmessage)
+
 
 class AddDcDialog(QtGui.QDialog):
     def __init__(self, parent=None):

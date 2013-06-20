@@ -41,7 +41,8 @@ except Exception, e:
                     'initmessage': u'Ready',
                     'minimumHeight': 30,
                     'visual': False
-                }
+                },
+                'navigation_show': False
             },
         'exitdialog': {
             'exit_title': u'登陆',

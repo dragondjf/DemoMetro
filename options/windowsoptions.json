@@ -37,6 +37,7 @@
    800, 
    600
   ], 
+  "navigation_show": false, 
   "windowicon": "skin\\images\\config8.png", 
   "title": "DemoMetro", 
   "statusbar": {
@@ -44,7 +45,7 @@
    "minimumHeight": 30, 
    "visual": false
   }, 
-  "fullscreenflag": false, 
+  "fullscreenflag": true, 
   "postion": [
    300, 
    300

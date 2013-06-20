@@ -96,8 +96,8 @@ class MetroWindow(QtGui.QWidget):
         currentpage = getattr(self, unicode('child' + self.sender().objectName()[:-6]) + 'Page')
         if currentpage is self.navigationPage:
             currentpage.parent.parent().statusBar().hide()
-        else:
-            currentpage.parent.parent().statusBar().show()
+        # else:
+        #     currentpage.parent.parent().statusBar().show()
         self.pages.setCurrentWidget(currentpage)
 
     @QtCore.pyqtSlot()
@@ -142,6 +142,8 @@ class MainWindow(QtGui.QMainWindow):
         windowicon = windowsoptions['mainwindow']['windowicon']
         fullscreenflag = windowsoptions['mainwindow']['fullscreenflag']
         statusbar_options = windowsoptions['mainwindow']['statusbar']
+        navigation_show = windowsoptions['mainwindow']['navigation_show']
+
 
         self.setWindowIcon(QtGui.QIcon(windowicon))  # 设置程序图标
         width = QtGui.QDesktopWidget().availableGeometry().width() * 4 / 5
@@ -201,34 +203,38 @@ class MainWindow(QtGui.QMainWindow):
 
     def closeEvent(self, evt):
         exitflag = utildialog.exit()
-        for item in exitflag:
-            if item == 'minRadio' and exitflag[item]:
-                self.showMinimized()
-                evt.ignore()
-            elif item == 'exitRadio' and exitflag[item]:
-                evt.accept()
-            elif item == 'exitsaveRadio' and exitflag[item]:
-                evt.accept()
-                options = windowsoptions
-                options['mainwindow']['fullscreenflag'] = self.isFullScreen()
-                painfos = {}
-                for gno, palabel in getattr(self.centeralwindow, 'MonitorPage').palabels.items():
-                    pa = {
-                        'ip': palabel.ip,
-                        'pid': palabel.pid,
-                        'did': palabel.did,
-                        'rid': palabel.rid,
-                        'name': palabel.name,
-                        'x': palabel.x,
-                        'y': palabel.y,
-                    }
-                    painfos.update({gno: pa})
-                with open(os.sep.join([os.getcwd(), 'options', 'windowsoptions.json']), 'wb') as f:
-                    # f.write(json.dumps(options, indent=1))
-                    json.dump(options, f, indent=1)
-                with open(os.sep.join([os.getcwd(), 'options', 'painfos.json']), 'wb') as f:
-                    # f.write(json.dumps(painfos, indent=1))
-                    json.dump(painfos, f, indent=1)
+        if exitflag:
+            for item in exitflag:
+                if item == 'minRadio' and exitflag[item]:
+                    self.showMinimized()
+                    evt.ignore()
+                elif item == 'exitRadio' and exitflag[item]:
+                    evt.accept()
+                elif item == 'exitsaveRadio' and exitflag[item]:
+                    evt.accept()
+                    options = windowsoptions
+                    options['mainwindow']['fullscreenflag'] = self.isFullScreen()
+                    options['mainwindow']['statusbar']['visual'] = self.statusbar.isVisible()
+                    painfos = {}
+                    for gno, palabel in getattr(self.centeralwindow, 'MonitorPage').palabels.items():
+                        pa = {
+                            'ip': palabel.ip,
+                            'pid': palabel.pid,
+                            'did': palabel.did,
+                            'rid': palabel.rid,
+                            'name': palabel.name,
+                            'x': palabel.x,
+                            'y': palabel.y,
+                        }
+                        painfos.update({gno: pa})
+                    with open(os.sep.join([os.getcwd(), 'options', 'windowsoptions.json']), 'wb') as f:
+                        # f.write(json.dumps(options, indent=1))
+                        json.dump(options, f, indent=1)
+                    with open(os.sep.join([os.getcwd(), 'options', 'painfos.json']), 'wb') as f:
+                        # f.write(json.dumps(painfos, indent=1))
+                        json.dump(painfos, f, indent=1)
+        else:
+            evt.ignore()
 
     def keyPressEvent(self, evt):
         if evt.key() == QtCore.Qt.Key_Escape:
@@ -249,6 +255,14 @@ class MainWindow(QtGui.QMainWindow):
                 else:
                     currentpage.navigation.setVisible(True)
                     self.navigation_flag = True
+            windowsoptions['mainwindow']['navigation_show'] = \
+            self.centeralwindow.pages.currentWidget().navigation.isVisible()
+
+        elif evt.key() == QtCore.Qt.Key_F9:
+            if self.statusbar.isVisible():
+                self.statusbar.hide()
+            else:
+                self.statusbar.show()
         elif evt.key() == QtCore.Qt.Key_Return:
             if isinstance(self.focusWidget(), QtGui.QPushButton):
                 self.focusWidget().click()

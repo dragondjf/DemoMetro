@@ -41,17 +41,14 @@ class MessageDialog(QtGui.QDialog):
 
         # message内容提示
         self.msglabel = QtGui.QLabel(text)
-
+        # self.msglabel.setAlignment(QtCore.Qt.AlignCenter)
         # 退出按钮布局
         self.login_lc = QtGui.QWidget()
         self.pbEnter = QtGui.QPushButton(u'确定', self)
-        self.pbCancel = QtGui.QPushButton(u'取消', self)
         self.pbEnter.clicked.connect(self.enter)
-        self.pbCancel.clicked.connect(self.reject)
-
         self.login_lc__mainlayout = QtGui.QGridLayout()
         self.login_lc__mainlayout.addWidget(self.pbEnter, 0, 0)
-        self.login_lc__mainlayout.addWidget(self.pbCancel, 0, 1)
+        # self.login_lc__mainlayout.addWidget(self.pbCancel, 0, 1)
         self.login_lc.setLayout(self.login_lc__mainlayout)
 
         mainlayout = QtGui.QVBoxLayout()
@@ -123,7 +120,7 @@ class ExitDialog(QtGui.QDialog):
         self.pbEnter = QtGui.QPushButton(u'确定', self)
         self.pbCancel = QtGui.QPushButton(u'取消', self)
         self.pbEnter.clicked.connect(self.exit)
-        self.pbCancel.clicked.connect(self.reject)
+        self.pbCancel.clicked.connect(self.close)
 
         self.login_lc__mainlayout = QtGui.QGridLayout()
         self.login_lc__mainlayout.addWidget(self.pbEnter, 0, 0)
@@ -140,12 +137,12 @@ class ExitDialog(QtGui.QDialog):
         self.exitflag = {}
 
     def exit(self):
-        self.accept()  # 关闭对话框并返回1
         for radio in ['minRadio', 'exitRadio', 'exitsaveRadio']:
             if getattr(self, radio) is self.exitradiogroup.checkedButton():
                 self.exitflag.update({radio: True})
             else:
                 self.exitflag.update({radio: False})
+        self.accept()
 
     def resizeEvent(self, event):
         if hasattr(self, 'login_bg'):
@@ -175,6 +172,7 @@ def exit():
 def msg(text):
     """返回True或False"""
     dialog = MessageDialog(text)
+    dialog.msglabel.setAlignment(QtCore.Qt.AlignCenter)
     if dialog.exec_():
         return True
     else:
