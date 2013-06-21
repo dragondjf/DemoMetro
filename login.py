@@ -5,14 +5,10 @@ from PyQt4 import QtGui
 from PyQt4 import QtCore
 import json
 from guiutil import set_skin
-from config import windowsoptions
-
-
-loginoptions = windowsoptions['login_window']
 
 
 class LoginDialog(QtGui.QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, loginoptions, parent=None):
         QtGui.QDialog.__init__(self, parent)
 
         login_title = loginoptions['login_title']
@@ -76,10 +72,7 @@ class LoginDialog(QtGui.QDialog):
         self.resize(size[0], size[1])
 
     def login(self):
-        if self.login_name.text() == 'admin' and self.login_password.text() == 'admin':
-            self.accept()  # 关闭对话框并返回1
-        else:
-            QtGui.QMessageBox.critical(self, u'错误', u'用户名密码不匹配')
+        self.accept()  # 关闭对话框并返回1
 
     def resizeEvent(self, event):
         if hasattr(self, 'login_bg'):
@@ -97,10 +90,10 @@ def setbg(widget, filename):
     widget.setPalette(palette)
 
 
-def login():
+def login(loginoptions):
     """返回True或False"""
-    dialog = LoginDialog()
+    dialog = LoginDialog(loginoptions)
     if dialog.exec_():
-        return True
+        return (unicode(dialog.login_name.text()), unicode(dialog.login_password.text()))
     else:
-        return False
+        return (u'', u'')

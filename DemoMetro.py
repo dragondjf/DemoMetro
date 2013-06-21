@@ -202,7 +202,7 @@ class MainWindow(QtGui.QMainWindow):
             self.showFullScreen()
 
     def closeEvent(self, evt):
-        exitflag = utildialog.exit()
+        exitflag = utildialog.exit(windowsoptions['exitdialog'])
         if exitflag:
             for item in exitflag:
                 if item == 'minRadio' and exitflag[item]:
@@ -269,8 +269,10 @@ class MainWindow(QtGui.QMainWindow):
 
 
 def main():
+    mainloginoptions = windowsoptions['login_window']
     app = QtGui.QApplication(sys.argv)
-    if login():
+    user, password = login(mainloginoptions)
+    if user == u'admin' and password == u'admin':
         splash = QtGui.QSplashScreen(QtGui.QPixmap(windowsoptions['splashimg']))
         splash.show()
         app.processEvents()

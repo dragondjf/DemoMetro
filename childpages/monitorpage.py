@@ -2,20 +2,32 @@
 # -*- coding: utf-8 -*-
 import os
 import json
+import logging
+import urllib2
+import base64
+import time
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
 from basepage import BasePage
-from utildialog import msg
+from utildialog import msg, urlinput, ipaddressinput
 from config import windowsoptions
 from guiutil import set_bg, set_skin
-from app import StatusListenThreadHandler
+from app import StatusListenThreadServer
+from login import login
 
 monitoroption = windowsoptions['monitorpage']
 adddcoptions = windowsoptions['adddcdialog']
+msgoptions = windowsoptions['msgdialog']
+urloptions = windowsoptions['urldialog']
+webserviceloginoptions = windowsoptions['webseverlogin_window']
+ipaddressoptions = windowsoptions['ipaddressdialog']
+
+logger = logging.getLogger(__name__)
 
 
 class MonitorPage(BasePage):
+
     def __init__(self, parent=None):
         super(MonitorPage, self).__init__(parent)
         self.parent = parent
@@ -43,15 +55,21 @@ class MonitorPage(BasePage):
         style_QMenu = QtCore.QString(style_QMenu1 + style_QMenu2 + style_QMenu3)
         self.contextMenu.setStyleSheet(style_QMenu)
 
+        self.loadPAmenu = QtGui.QMenu(u'加载防区(Load PA)')
+        self.action_loadfromweb = self.loadPAmenu.addAction(u'加载ifpms1.2(Load from 1.2 WebService)')
+        self.action_loadfromconfig = self.loadPAmenu.addAction(u'加载配置文件(Load from config file)')
+        self.loadPAmenu.setStyleSheet(style_QMenu)
+
         self.action_pointnum = self.contextMenu.addAction(u'载入监控地图(Load image)')
         self.action_addPA = self.contextMenu.addAction(u'增加防区(Add PA)')
-        self.action_loadPA = self.contextMenu.addAction(u'加载防区(Load PA)')
+        self.action_loadPA = self.contextMenu.addMenu(self.loadPAmenu)
         self.action_clearPA = self.contextMenu.addAction(u'清除防区(Clear PA)')
         self.action_listenWebService = self.contextMenu.addAction(u'监听(Listen WebService)')
 
         self.action_pointnum.triggered.connect(self.set_monitormap)
         self.action_addPA.triggered.connect(self.addPAs)
-        self.action_loadPA.triggered.connect(self.loadPAs)
+        self.action_loadfromweb.triggered.connect(self.loadPAsfromWeb)
+        self.action_loadfromconfig.triggered.connect(self.loadPAsfromconfig)
         self.action_clearPA.triggered.connect(self.clearPAs)
         self.action_listenWebService.triggered.connect(self.listenwebservice)
 
@@ -91,7 +109,37 @@ class MonitorPage(BasePage):
                         self.ips.append(ip)
         self.createpalabels(self.ips, dc_panum)
 
-    def loadPAs(self):
+    def loadPAsfromWeb(self):
+        self.clearPAs()
+        user, password = login(webserviceloginoptions)
+        if user == u'ov-orange' and password== u'ov-orange':
+            url = urlinput(urloptions)
+            f = None
+            try:
+                req = urllib2.Request(url)
+                # logger.info("web get [%s]" % (url))
+                auth = "Basic " + base64.urlsafe_b64encode("%s:%s" % (user, password))
+                req.add_header("Authorization", auth)
+                f = urllib2.urlopen(req)
+                palist = json.loads(f.read())
+                for pa in palist['protection_areas']:
+                    if not pa.has_key('rid'):
+                        pa.update({'rid': 0})
+                    gno = '%d-%d-%d' % (pa['rid'], pa['did'], pa['pid'])
+                    palabel = PALabel(pa['ip'], pa['pid'], pa['did'], pa['rid'], pa['name'], pa['cx'], pa['cy'], self)
+                    palabel.status = pa['status']
+
+                    t = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(pa['status_change_time']))).decode('UTF8')
+                    palabel.status_change_time = t             
+                    palabel.show()
+                    self.palabels.update({gno: palabel})
+            except Exception, e:
+                logger.error(e)
+            finally:
+                if f:
+                    f.close()
+
+    def loadPAsfromconfig(self):
         try:
             import os
             with open(os.sep.join([os.getcwd(), 'options', 'painfos.json']), 'r') as f:
@@ -129,7 +177,7 @@ class MonitorPage(BasePage):
             self.action_loadPA.setEnabled(False)
             self.action_clearPA.setEnabled(True)
         else:
-            flag = msg(u'支持的数量上限为128,请输入正确的ip地址范围')
+            flag = msg(u'支持的数量上限为128,请输入正确的ip地址范围', msgoptions)
             if flag:
                 self.addPAs()
 
@@ -144,9 +192,11 @@ class MonitorPage(BasePage):
         self.action_clearPA.setEnabled(False)
 
     def listenwebservice(self):
-        self.statushandler = StatusListenThreadHandler()
-        self.statushandler.statuschanged.connect(self.changestatus)
-        self.statushandler.start()
+        ip, port = ipaddressinput(ipaddressoptions)
+        if ip and port:
+            self.statuserver = StatusListenThreadServer(ip, port)
+            self.statuserver.statuschanged.connect(self.changestatus)
+            self.statuserver.start()
 
     @QtCore.pyqtSlot(dict)
     def changestatus(self, painfo):
@@ -155,10 +205,10 @@ class MonitorPage(BasePage):
         pid = painfo['pid']
         rid = painfo['rid']
         status = painfo['status']
-        change_time = painfo['change_time']
+        status_change_time = painfo['status_change_time']
         gno = '%d-%d-%d' % (rid, did, pid)
         self.palabels[gno].status = status
-        self.palabels[gno].change_time = change_time
+        self.palabels[gno].status_change_time = status_change_time
         self.palabels[gno].update()
 
     def setbg(self, filename):
@@ -238,9 +288,19 @@ def poscalulator(width, height, row, col):
 
 class PALabel(QtGui.QLabel):
 
-    status_name = ['Disabled', 'Disconn', 'Connect', 'MinorWarning', 'Warning', 'Blast', 'Fiberbroken', 'Unnormal']
+    status_name = ['Disabled', 'Disconn', 'Connect', 'MinorWarning' , 'Warning', 'Fiberbroken', 'Blast', 'Unnormal']
     ALARM_DELAY_SECS = 5  # 告警状态延迟秒数
     ALARM_REPREAT_INTERVAL_SECS = 2  # 告警持续期间播放声音重复间隔
+
+    STATUS_DISABLE = 0
+    STATUS_DISCONN = 1
+    STATUS_CONNECT = 2
+    STATUS_ALARM_MINOR = 3
+    STATUS_ALARM_CRITICAL = 4
+    STATUS_ALARM_FIBER_BREAK = 5
+    STATUS_ALARM_BLAST = 6
+    STATUS_LID_OPEN = 7
+    STATUS_LID_CLOSE = 8
 
     statuscolor = {
         'Disabled': '#ABABAB',
@@ -276,7 +336,7 @@ class PALabel(QtGui.QLabel):
         self.x = x
         self.y = y
         self.status = 1
-        self.change_time = u'1970-08-08: 08:08:08'
+        self.status_change_time = u'1970-08-08: 08:08:08'
         self.latest_change_time = u'1970-08-08: 08:08:08'
         self.alg = {}
         self.setText(self.name)
@@ -350,7 +410,7 @@ class PALabel(QtGui.QLabel):
                             self.ip,
                             self.name, 
                             self.status_name_zh[self.status_name[self.status]],
-                            self.change_time,
+                            self.status_change_time,
                             self.latest_change_time,
                             self.rid,
                             self.did,
@@ -359,7 +419,7 @@ class PALabel(QtGui.QLabel):
                             self.x,
                             self.y
                             )
-        msg(self.propertymessage)
+        msg(self.propertymessage, msgoptions)
 
     def showContextMenu(self):
         '''
@@ -415,7 +475,7 @@ class PALabel(QtGui.QLabel):
                             self.ip,
                             self.name,
                             self.status_name_zh[self.status_name[self.status]],
-                            self.change_time
+                            self.status_change_time
                             )
             self.setToolTip(self.tipmessage)
 

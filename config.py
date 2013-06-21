@@ -16,6 +16,14 @@ except Exception, e:
                 'logo_title': u'Metro Style Mangager System',
                 'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
             },
+        'webseverlogin_window': {
+                'login_title': u'WebService登陆',
+                'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
+                'minsize': (400, 300),
+                'size': (400, 300),
+                'logo_title': u'加载来自WebService的防区',
+                'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
+            },
         'mainwindow': {
                 'title': u'DemoMetro',
                 'postion': (300, 300),
@@ -61,7 +69,23 @@ except Exception, e:
             'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
         },
         'msgdialog': {
-            'msg_title': u'增加采集器',
+            'msg_title': u'消息提示',
+            'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
+            'minsize': (400, 300),
+            'size': (400, 300),
+            'logo_title': u'Metro Style Mangager System',
+            'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
+        },
+        'urldialog': {
+            'url_title': u'输入访问的url',
+            'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
+            'minsize': (400, 300),
+            'size': (400, 300),
+            'logo_title': u'Metro Style Mangager System',
+            'logo_img_url': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png'])
+        },
+        'ipaddressdialog': {
+            'ipaddress_title': u'输入访问的url',
             'windowicon': os.sep.join([os.getcwd(), 'skin', 'images', 'config8.png']),
             'minsize': (400, 300),
             'size': (400, 300),
